@@ -63,10 +63,10 @@ setup_node() {
     CURRENT_NODE_VERSION=$(node -v)
     print_message "Node.js ya está instalado (versión: $CURRENT_NODE_VERSION)"
     
-    # Verificar versión de Node.js (mínimo v18.x)
+    # Verificar versión de Node.js (mínimo v18.x para Next.js)
     NODE_MAJOR_VERSION=$(echo $CURRENT_NODE_VERSION | cut -d. -f1 | tr -d 'v')
     if [[ $NODE_MAJOR_VERSION -lt 18 ]]; then
-      print_warning "La versión de Node.js es inferior a 18.x. Se recomienda actualizar."
+      print_warning "La versión de Node.js es inferior a 18.x. Next.js 14 requiere Node.js 18.17 o superior."
       read -p "¿Deseas actualizar Node.js? (s/n): " UPDATE_NODE
       if [[ $UPDATE_NODE == "s" || $UPDATE_NODE == "S" ]]; then
         print_message "Actualizando Node.js..."
@@ -75,91 +75,14 @@ setup_node() {
       fi
     fi
   fi
-}
-
-# Instalar o verificar Python
-setup_python() {
-  print_step "Configurando Python"
   
-  if ! command -v python3 &> /dev/null; then
-    print_message "Instalando Python mediante Homebrew..."
-    brew install python
-    print_message "Python instalado correctamente"
+  # Verificar npm
+  if ! command -v npm &> /dev/null; then
+    print_error "npm no está instalado. Instalando..."
+    brew install npm
   else
-    PYTHON_VERSION=$(python3 --version)
-    print_message "Python ya está instalado ($PYTHON_VERSION)"
-  fi
-  
-  # Comprobar si pip está instalado
-  if ! command -v pip3 &> /dev/null; then
-    print_message "Instalando pip..."
-    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-    python3 get-pip.py
-    rm get-pip.py
-    print_message "Pip instalado correctamente"
-  else
-    print_message "Pip ya está instalado"
-  fi
-}
-
-# Configurar entorno virtual de Python
-setup_venv() {
-  print_step "Configurando entorno virtual Python"
-  
-  # Verificar si virtualenv está instalado
-  if ! command -v virtualenv &> /dev/null; then
-    print_message "Instalando virtualenv..."
-    pip3 install virtualenv
-  else
-    print_message "virtualenv ya está instalado"
-  fi
-  
-  # Crear entorno virtual
-  if [ ! -d "venv" ]; then
-    print_message "Creando entorno virtual..."
-    python3 -m virtualenv venv
-    print_message "Entorno virtual creado correctamente"
-  else
-    print_message "El entorno virtual ya existe"
-  fi
-  
-  # Activar entorno virtual
-  print_message "Activando entorno virtual..."
-  source venv/bin/activate
-}
-
-# Instalar dependencias del proyecto
-install_dependencies() {
-  print_step "Instalando dependencias del proyecto"
-  
-  # Instalar dependencias de Python
-  if [ -f "requirements.txt" ]; then
-    print_message "Instalando dependencias Python desde requirements.txt..."
-    pip install -r requirements.txt
-  else
-    print_warning "No se encontró el archivo requirements.txt"
-    
-    # Crear requirements.txt con dependencias básicas
-    print_message "Creando archivo requirements.txt básico..."
-    cat > requirements.txt << EOL
-Flask==2.3.3
-SQLAlchemy==2.0.20
-psycopg2-binary==2.9.7
-python-dotenv==1.0.0
-pydantic==2.3.0
-pytest==7.4.0
-EOL
-    
-    print_message "Instalando dependencias Python desde nuevo requirements.txt..."
-    pip install -r requirements.txt
-  fi
-  
-  # Instalar dependencias de Node.js
-  if [ -f "package.json" ]; then
-    print_message "Instalando dependencias Node.js desde package.json..."
-    npm install
-  else
-    print_warning "No se encontró el archivo package.json"
+    npm_version=$(npm -v)
+    print_message "npm está instalado (versión: $npm_version)"
   fi
 }
 
@@ -170,8 +93,9 @@ setup_database() {
   # Verificar si PostgreSQL está instalado
   if ! command -v postgres &> /dev/null; then
     print_message "Instalando PostgreSQL mediante Homebrew..."
-    brew install postgresql
-    brew services start postgresql
+    brew install postgresql@14
+    brew link --force postgresql@14
+    brew services start postgresql@14
     print_message "PostgreSQL instalado y servicio iniciado"
     
     # Dar tiempo a que PostgreSQL inicie completamente
@@ -211,26 +135,56 @@ setup_database() {
   fi
 }
 
+# Instalar dependencias del proyecto
+install_dependencies() {
+  print_step "Instalando dependencias del proyecto"
+  
+  # Instalar dependencias de Node.js
+  if [ -f "package.json" ]; then
+    print_message "Instalando dependencias Node.js desde package.json..."
+    npm install
+    
+    # Generar los tipos de Prisma
+    print_message "Generando cliente Prisma..."
+    npx prisma generate
+  else
+    print_error "No se encontró el archivo package.json. ¿Estás en el directorio correcto del proyecto?"
+    exit 1
+  fi
+}
+
 # Configurar variables de entorno
 setup_env() {
   print_step "Configurando variables de entorno"
   
   if [ ! -f ".env" ]; then
-    print_message "Creando archivo .env..."
-    cat > .env << EOL
-# Configuración de la aplicación
-NODE_ENV=development
-POSTGRES_USER=lumoinventory
-POSTGRES_PASSWORD=lumoinventory
-POSTGRES_DB=lumoinventory_db
+    if [ -f ".env.example" ]; then
+      print_message "Creando archivo .env a partir de .env.example..."
+      cp .env.example .env
+      print_message "Archivo .env creado correctamente. Por favor, actualiza las credenciales en .env"
+    else
+      print_message "Creando archivo .env..."
+      cat > .env << EOL
+# Base de datos
 DATABASE_URL=postgresql://lumoinventory:lumoinventory@localhost:5432/lumoinventory_db
+
+# Next.js
 NEXT_PUBLIC_API_URL=http://localhost:3000/api
+
+# Supabase (si aplica)
 NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 EOL
-    print_message "Archivo .env creado correctamente"
+      print_message "Archivo .env creado correctamente"
+    fi
   else
     print_message "El archivo .env ya existe"
+    
+    # Verificar que la URL de la base de datos esté configurada correctamente
+    if ! grep -q "DATABASE_URL" .env; then
+      print_warning "No se encontró DATABASE_URL en el archivo .env. Añadiendo..."
+      echo "DATABASE_URL=postgresql://lumoinventory:lumoinventory@localhost:5432/lumoinventory_db" >> .env
+    fi
   fi
 }
 
@@ -240,56 +194,22 @@ setup_git() {
   
   # Configurar Git para manejar correctamente los finales de línea
   git config --local core.autocrlf input
+  print_message "Git configurado para compatibilidad multiplataforma (core.autocrlf=input)"
   
-  # Ignorar archivos específicos del sistema operativo
+  # Verificar si .gitignore existe
   if [ ! -f ".gitignore" ]; then
     print_message "Creando archivo .gitignore..."
-    cat >> .gitignore << EOL
-# macOS específicos
-.DS_Store
-.AppleDouble
-.LSOverride
-Icon
-._*
-.DocumentRevisions-V100
-.fseventsd
-.Spotlight-V100
-.TemporaryItems
-.Trashes
-.VolumeIcon.icns
-.com.apple.timemachine.donotpresent
-.AppleDB
-.AppleDesktop
-Network Trash Folder
-Temporary Items
-.apdisk
-
-# Windows específicos
-Thumbs.db
-Thumbs.db:encryptable
-ehthumbs.db
-ehthumbs_vista.db
-*.stackdump
-[Dd]esktop.ini
-$RECYCLE.BIN/
-*.cab
-*.msi
-*.msix
-*.msm
-*.msp
-*.lnk
-
-# Entorno virtual Python
-venv/
-env/
-.venv/
-.env/
+    cat > .gitignore << EOL
+# Next.js
+.next/
+out/
 
 # Node.js
 node_modules/
-npm-debug.log
-yarn-error.log
-.pnpm-debug.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
 
 # Archivos de entorno
 .env
@@ -298,18 +218,65 @@ yarn-error.log
 .env.test.local
 .env.production.local
 
-# Archivos de compilación
-dist/
-build/
-out/
-.next/
-__pycache__/
-*.py[cod]
-*$py.class
+# Prisma
+prisma/.env
+.env
+
+# macOS específicos
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows específicos
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+
+# IDE y Editores
+.idea/
+.vscode/
+*.swp
+*.swo
 EOL
     print_message "Archivo .gitignore creado correctamente"
   else
     print_message "El archivo .gitignore ya existe"
+  fi
+}
+
+# Configurar y migrar Prisma
+setup_prisma() {
+  print_step "Configurando Prisma"
+  
+  # Verificar si Prisma está instalado
+  if [ ! -d "node_modules/@prisma" ]; then
+    print_message "Instalando Prisma CLI..."
+    npm install prisma --save-dev
+  fi
+  
+  # Verificar si el esquema de Prisma existe
+  if [ -f "src/prisma/schema.prisma" ]; then
+    print_message "Esquema de Prisma encontrado. Ejecutando migraciones..."
+    
+    # Ejecutar migraciones de Prisma si hay un directorio de migraciones
+    if [ -d "src/prisma/migrations" ]; then
+      npx prisma migrate deploy
+    else
+      print_warning "No se encontraron migraciones de Prisma. Creando migración inicial..."
+      npx prisma migrate dev --name init
+    fi
+    
+    # Generar cliente de Prisma
+    print_message "Generando cliente de Prisma..."
+    npx prisma generate
+  else
+    print_warning "No se encontró un esquema de Prisma en src/prisma/schema.prisma"
   fi
 }
 
@@ -320,17 +287,18 @@ main() {
   # Ejecutar cada paso de la configuración
   check_homebrew
   setup_node
-  setup_python
-  setup_venv
-  install_dependencies
   setup_database
   setup_env
+  install_dependencies
+  setup_prisma
   setup_git
   
   print_step "Configuración completada"
   print_message "El entorno de desarrollo de LumoInventory está listo para usar en macOS."
-  print_message "Para activar el entorno virtual Python: source venv/bin/activate"
   print_message "Para iniciar la aplicación Next.js: npm run dev"
+  
+  # Mostrar URL de la aplicación
+  print_message "La aplicación estará disponible en: http://localhost:3000"
   
   # Instrucciones específicas de cambio entre plataformas
   print_warning "Recomendaciones al cambiar entre Windows y macOS:"

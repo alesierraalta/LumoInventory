@@ -2,6 +2,12 @@
 
 Este documento proporciona instrucciones para configurar y mantener el entorno de desarrollo de LumoInventory tanto en Windows como en macOS.
 
+## Tecnologías Utilizadas
+
+- **Frontend**: Next.js con TypeScript y Tailwind CSS
+- **Base de datos**: PostgreSQL con Prisma como ORM
+- **Dependencias principales**: React, Chart.js, Excel.js, React Hook Form, React Hot Toast
+
 ## Configuración inicial
 
 ### En macOS
@@ -20,21 +26,18 @@ Este documento proporciona instrucciones para configurar y mantener el entorno d
 
 3. El script automáticamente:
    - Instalará Homebrew (si no está instalado)
-   - Configurará Node.js, Python y PostgreSQL
-   - Creará un entorno virtual de Python
-   - Instalará todas las dependencias
-   - Configurará la base de datos
+   - Configurará Node.js (versión 18 o superior)
+   - Instalará y configurará PostgreSQL
+   - Instalará todas las dependencias con npm
+   - Configurará y migrará la base de datos con Prisma
    - Configurará Git para compatibilidad multiplataforma
 
-4. Una vez completado, activa el entorno virtual:
-   ```bash
-   source venv/bin/activate
-   ```
-
-5. Inicia la aplicación:
+4. Inicia la aplicación:
    ```bash
    npm run dev
    ```
+
+5. Navega a [http://localhost:3000](http://localhost:3000) en tu navegador para ver la aplicación.
 
 ### En Windows
 
@@ -45,44 +48,39 @@ Este documento proporciona instrucciones para configurar y mantener el entorno d
    ```
 
 2. Instala las dependencias necesarias:
-   - [Node.js](https://nodejs.org/) (versión 18 o superior)
-   - [Python](https://www.python.org/downloads/) (versión 3.9 o superior)
+   - [Node.js](https://nodejs.org/) (versión 18.17 o superior)
    - [PostgreSQL](https://www.postgresql.org/download/windows/)
 
-3. Configura el entorno virtual de Python:
-   ```powershell
-   pip install virtualenv
-   virtualenv venv
-   .\venv\Scripts\activate
-   ```
-
-4. Instala las dependencias:
-   ```powershell
-   pip install -r requirements.txt
-   npm install
-   ```
-
-5. Configura PostgreSQL:
+3. Configura PostgreSQL:
    - Crea un usuario llamado `lumoinventory` con contraseña `lumoinventory`
    - Crea una base de datos llamada `lumoinventory_db`
    - Asigna todos los privilegios del usuario a la base de datos
 
-6. Crea un archivo `.env` en la raíz del proyecto con el siguiente contenido:
+4. Crea un archivo `.env` en la raíz del proyecto (o copia desde `.env.example` si existe):
    ```
-   NODE_ENV=development
-   POSTGRES_USER=lumoinventory
-   POSTGRES_PASSWORD=lumoinventory
-   POSTGRES_DB=lumoinventory_db
    DATABASE_URL=postgresql://lumoinventory:lumoinventory@localhost:5432/lumoinventory_db
    NEXT_PUBLIC_API_URL=http://localhost:3000/api
    NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
    ```
 
+5. Instala las dependencias:
+   ```powershell
+   npm install
+   ```
+
+6. Genera el cliente Prisma y aplica las migraciones:
+   ```powershell
+   npx prisma generate
+   npx prisma migrate deploy
+   ```
+
 7. Inicia la aplicación:
    ```powershell
    npm run dev
    ```
+
+8. Navega a [http://localhost:3000](http://localhost:3000) en tu navegador para ver la aplicación.
 
 ## Cambiar entre plataformas
 
@@ -116,32 +114,37 @@ Este documento proporciona instrucciones para configurar y mantener el entorno d
    git commit -m "Normalizar finales de línea"
    ```
 
-### Entorno virtual de Python
-
-Dado que las rutas de activación de entornos virtuales son diferentes en Windows y macOS:
-
-- En macOS: `source venv/bin/activate`
-- En Windows: `.\venv\Scripts\activate`
-
-Es recomendable recrear el entorno virtual cada vez que cambies de plataforma:
-
-1. Elimina el entorno virtual (antes de hacer el cambio de plataforma)
-2. Crea un nuevo entorno virtual en la nueva plataforma
-3. Reinstala las dependencias
-
 ### Base de datos
 
 Si utilizas bases de datos locales distintas en cada plataforma, considera:
 
 1. Exportar los datos antes de cambiar de plataforma:
    ```bash
+   # En macOS
+   pg_dump -U lumoinventory lumoinventory_db > database_backup.sql
+   
+   # En Windows (asegúrate de que pg_dump esté en el PATH)
    pg_dump -U lumoinventory lumoinventory_db > database_backup.sql
    ```
 
 2. Importar los datos en la nueva plataforma:
    ```bash
+   # En macOS
+   psql -U lumoinventory -d lumoinventory_db < database_backup.sql
+   
+   # En Windows
    psql -U lumoinventory -d lumoinventory_db < database_backup.sql
    ```
+
+Alternativamente, puedes usar Prisma para facilitar este proceso:
+
+```bash
+# Exportar datos usando Prisma Seed (primero crea un script de seed)
+npx prisma db seed
+
+# En la nueva plataforma
+npx prisma migrate reset # Cuidado: esto eliminará todos los datos existentes
+```
 
 ## Solución de problemas comunes
 
@@ -158,20 +161,18 @@ git commit -m "Fix line endings"
 
 ### Problemas con rutas de archivos
 
-Windows utiliza barras invertidas (`\`) mientras que macOS utiliza barras normales (`/`). Utiliza siempre barras normales (`/`) en tu código y configuración.
+Windows utiliza barras invertidas (`\`) mientras que macOS utiliza barras normales (`/`). En el código, utiliza siempre barras normales (`/`) y NextJS se encargará de manejar correctamente las rutas en ambos sistemas.
 
-### Problemas de dependencias
+### Problemas con Prisma
 
-Si hay problemas con las dependencias al cambiar de plataforma:
+Si encuentras problemas con Prisma al cambiar entre plataformas:
 
 ```bash
-# En macOS
-source venv/bin/activate
-pip install -r requirements.txt
+# Regenera el cliente Prisma
+npx prisma generate
 
-# En Windows
-.\venv\Scripts\activate
-pip install -r requirements.txt
+# Si hay problemas con la base de datos
+npx prisma migrate reset --force
 ```
 
 ### Problemas con Node.js
@@ -183,15 +184,19 @@ rm -rf node_modules
 npm install
 ```
 
-## Herramientas recomendadas para desarrollo multiplataforma
+## Herramientas recomendadas para desarrollo
 
-- **Visual Studio Code**: Compatible con Windows y macOS, con configuraciones compartidas.
+- **Visual Studio Code**: Compatible con Windows y macOS, con extensiones para:
+  - Prisma
+  - ESLint
+  - Prettier
+  - Tailwind CSS IntelliSense
 - **Docker**: Considerar Docker para desarrollo si los problemas de compatibilidad persisten.
-- **GitHub Codespaces**: Entorno de desarrollo consistente basado en la nube.
+- **Postman** o **Insomnia**: Para probar las APIs.
+- **pgAdmin** o **DBeaver**: Para gestionar la base de datos PostgreSQL.
 
 ## Contacto y soporte
 
 Si encuentras problemas específicos de plataforma, comunícate con el equipo de desarrollo:
 
-- Correo: [contacto@ejemplo.com]
 - GitHub: Crea un issue en el repositorio detallando el problema 
