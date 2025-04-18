@@ -136,28 +136,60 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    // Calculate derived fields if not provided
-    if (!data.grossProfit) {
-      data.grossProfit = data.sellingPrice - data.unitCost;
+    // Calculate fixed cost
+    const fixedCostPct = data.fixedCostPct || 2; // Default 2%
+    const fixedCost = (data.unitCost * fixedCostPct) / 100;
+    const totalUnitCost = data.unitCost + fixedCost;
+    
+    // Calculate margins if not provided
+    let distributorPrice = data.distributorPrice;
+    let intermediatePrice = data.intermediatePrice;
+    let distributorMargin = data.distributorMargin;
+    let intermediateMargin = data.intermediateMargin;
+    
+    // If not provided, calculate using typical markups
+    if (!distributorPrice) {
+      distributorPrice = totalUnitCost * 2; // Example markup
+      distributorMargin = ((distributorPrice - totalUnitCost) / distributorPrice) * 100;
     }
     
-    if (!data.margin) {
-      data.margin = data.unitCost > 0 
-        ? ((data.sellingPrice - data.unitCost) / data.sellingPrice) * 100 
-        : 0;
+    if (!intermediatePrice) {
+      intermediatePrice = distributorPrice * 1.25; // Example markup
+      intermediateMargin = ((intermediatePrice - totalUnitCost) / intermediatePrice) * 100;
     }
     
-    // Create product
+    // Calculate client final margin
+    const margin = ((data.sellingPrice - totalUnitCost) / data.sellingPrice) * 100;
+    
+    // Calculate gross profit
+    const grossProfit = data.sellingPrice - totalUnitCost;
+    
+    // Create product with calculated fields
     const product = await prisma.product.create({
       data: {
         code: data.code,
         description: data.description,
         unitCost: data.unitCost,
+        fixedCostPct: fixedCostPct,
+        fixedCost: fixedCost,
+        totalUnitCost: totalUnitCost,
+        margin: margin,
+        distributorPrice: distributorPrice,
+        distributorMargin: distributorMargin,
+        intermediatePrice: intermediatePrice,
+        intermediateMargin: intermediateMargin,
         sellingPrice: data.sellingPrice,
-        grossProfit: data.grossProfit,
-        margin: data.margin,
-        netCost: data.netCost || data.unitCost,
+        grossProfit: grossProfit,
+        netCost: data.netCost || totalUnitCost,
         availableQty: data.availableQty || 0,
+        inTransitQty: data.inTransitQty || 0,
+        warehouseQty: data.warehouseQty || 0,
+        preSaleQty: data.preSaleQty || 0,
+        soldQty: data.soldQty || 0,
+        routeQty: data.routeQty || 0,
+        routePct: data.routePct || 0,
+        image: data.image,
+        isInvestmentRecovered: data.isInvestmentRecovered || false,
         categoryId: data.categoryId
       },
       include: {
@@ -179,6 +211,91 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json(
       { error: 'Failed to create inventory item' },
+      { status: 500 }
+    );
+  }
+}
+
+// PUT /api/inventory/:id - Update an inventory item
+export async function PUT(request: NextRequest) {
+  try {
+    const url = new URL(request.url);
+    const pathParts = url.pathname.split('/');
+    const id = pathParts[pathParts.length - 1];
+    
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Product ID is required' },
+        { status: 400 }
+      );
+    }
+    
+    const data = await request.json();
+    
+    // Recalculate derived fields if core values change
+    let updateData: any = { ...data };
+    
+    if (data.unitCost || data.fixedCostPct) {
+      // Get current product to use existing values if not provided
+      const currentProduct = await prisma.product.findUnique({
+        where: { id }
+      });
+      
+      if (!currentProduct) {
+        return NextResponse.json(
+          { error: 'Product not found' },
+          { status: 404 }
+        );
+      }
+      
+      const unitCost = data.unitCost ?? currentProduct.unitCost;
+      const fixedCostPct = data.fixedCostPct ?? currentProduct.fixedCostPct;
+      
+      // Recalculate fixed cost and total unit cost
+      const fixedCost = (unitCost * fixedCostPct) / 100;
+      const totalUnitCost = unitCost + fixedCost;
+      
+      updateData.fixedCost = fixedCost;
+      updateData.totalUnitCost = totalUnitCost;
+      
+      // Recalculate margins if sellingPrice is provided
+      if (data.sellingPrice) {
+        updateData.margin = ((data.sellingPrice - totalUnitCost) / data.sellingPrice) * 100;
+        updateData.grossProfit = data.sellingPrice - totalUnitCost;
+      }
+      
+      // Recalculate distributor and intermediate margins if prices change
+      if (data.distributorPrice) {
+        updateData.distributorMargin = ((data.distributorPrice - totalUnitCost) / data.distributorPrice) * 100;
+      }
+      
+      if (data.intermediatePrice) {
+        updateData.intermediateMargin = ((data.intermediatePrice - totalUnitCost) / data.intermediatePrice) * 100;
+      }
+    }
+    
+    // Update product
+    const product = await prisma.product.update({
+      where: { id },
+      data: updateData,
+      include: {
+        category: true
+      }
+    });
+    
+    return NextResponse.json(product);
+  } catch (error: any) {
+    console.error('Error updating inventory item:', error);
+    
+    if (error.code === 'P2025') {
+      return NextResponse.json(
+        { error: 'Product not found' },
+        { status: 404 }
+      );
+    }
+    
+    return NextResponse.json(
+      { error: 'Failed to update inventory item' },
       { status: 500 }
     );
   }

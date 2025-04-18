@@ -2,12 +2,27 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ImportFileType } from '@/lib/excel-parsers/types';
 
+// Función de logging para depuración
+function logImportAPI(message: string, data?: any) {
+  console.log(`[IMPORT API] ${message}`);
+  if (data) {
+    try {
+      console.log(JSON.stringify(data, null, 2));
+    } catch (e) {
+      console.log('Data too complex to stringify:', typeof data);
+    }
+  }
+}
+
 // POST /api/import - Process the import data from the frontend
 export async function POST(request: NextRequest) {
   try {
+    logImportAPI('Iniciando procesamiento de importación');
+    
     const data = await request.json();
     
     if (!data.type || !data.items || !Array.isArray(data.items)) {
+      logImportAPI('Error: Formato de datos de importación inválido', data);
       return NextResponse.json(
         { error: 'Invalid import data format' },
         { status: 400 }
@@ -15,15 +30,20 @@ export async function POST(request: NextRequest) {
     }
     
     const { type, items } = data;
+    logImportAPI(`Tipo de importación: ${type}, cantidad de items: ${items.length}`);
     
     switch (type) {
       case ImportFileType.INVENTORY:
+        logImportAPI('Procesando importación de inventario');
         return await handleInventoryImport(items);
-      case ImportFileType.CATALOG:
+      case 'catalog':
+        logImportAPI('Procesando importación de catálogo');
         return await handleCatalogImport(items);
-      case ImportFileType.PROJECT:
+      case ImportFileType.PROJECTS:
+        logImportAPI('Procesando importación de proyecto');
         return await handleProjectImport(data);
       default:
+        logImportAPI(`Error: Tipo de importación no soportado: ${type}`);
         return NextResponse.json(
           { error: 'Unsupported import type' },
           { status: 400 }
@@ -31,6 +51,7 @@ export async function POST(request: NextRequest) {
     }
   } catch (error) {
     console.error('Error processing import:', error);
+    logImportAPI(`Error inesperado: ${(error as Error).message}`);
     return NextResponse.json(
       { error: 'Failed to process import' },
       { status: 500 }
@@ -39,6 +60,8 @@ export async function POST(request: NextRequest) {
 }
 
 async function handleInventoryImport(items: any[]) {
+  logImportAPI(`Iniciando importación de ${items.length} items de inventario`);
+  
   const results = {
     created: 0,
     updated: 0,
@@ -49,6 +72,8 @@ async function handleInventoryImport(items: any[]) {
   // Process each item in the inventory import
   for (const item of items) {
     try {
+      logImportAPI(`Procesando item: ${item.code} - ${item.description}`);
+      
       // Find or create category
       let category = await prisma.category.findFirst({
         where: {
@@ -60,12 +85,15 @@ async function handleInventoryImport(items: any[]) {
       });
 
       if (!category) {
+        logImportAPI(`Creando nueva categoría: ${item.category}`);
         category = await prisma.category.create({
           data: {
             name: item.category,
             description: `Categoría importada: ${item.category}`
           }
         });
+      } else {
+        logImportAPI(`Categoría encontrada: ${category.name} (ID: ${category.id})`);
       }
 
       // Look for existing product
@@ -77,6 +105,7 @@ async function handleInventoryImport(items: any[]) {
 
       if (existingProduct) {
         // Update existing product
+        logImportAPI(`Actualizando producto existente: ${item.code}`);
         await prisma.product.update({
           where: {
             id: existingProduct.id
@@ -95,6 +124,7 @@ async function handleInventoryImport(items: any[]) {
         results.updated++;
       } else {
         // Create new product
+        logImportAPI(`Creando nuevo producto: ${item.code}`);
         await prisma.product.create({
           data: {
             code: item.code,
@@ -112,15 +142,20 @@ async function handleInventoryImport(items: any[]) {
       }
     } catch (error) {
       console.error(`Error processing item ${item.code}:`, error);
+      const errorMessage = `Error en producto ${item.code}: ${(error as Error).message}`;
+      logImportAPI(errorMessage);
       results.failed++;
-      results.errors.push(`Error en producto ${item.code}: ${(error as Error).message}`);
+      results.errors.push(errorMessage);
     }
   }
 
+  logImportAPI(`Importación de inventario completada: ${results.created} creados, ${results.updated} actualizados, ${results.failed} fallidos`);
   return NextResponse.json(results);
 }
 
 async function handleCatalogImport(items: any[]) {
+  logImportAPI(`Iniciando importación de ${items.length} items de catálogo`);
+  
   const results = {
     created: 0,
     updated: 0,
@@ -131,6 +166,8 @@ async function handleCatalogImport(items: any[]) {
   // Process each item in the catalog import
   for (const item of items) {
     try {
+      logImportAPI(`Procesando item de catálogo: ${item.code} - ${item.description}`);
+      
       // Find or create category
       let category = await prisma.category.findFirst({
         where: {
@@ -142,12 +179,15 @@ async function handleCatalogImport(items: any[]) {
       });
 
       if (!category) {
+        logImportAPI(`Creando nueva categoría: ${item.category}`);
         category = await prisma.category.create({
           data: {
             name: item.category,
             description: `Categoría importada: ${item.category}`
           }
         });
+      } else {
+        logImportAPI(`Categoría encontrada: ${category.name} (ID: ${category.id})`);
       }
 
       // Check if product exists
@@ -159,6 +199,7 @@ async function handleCatalogImport(items: any[]) {
 
       if (existingProduct) {
         // Update description and category
+        logImportAPI(`Actualizando producto existente: ${item.code}`);
         await prisma.product.update({
           where: {
             id: existingProduct.id
@@ -171,6 +212,7 @@ async function handleCatalogImport(items: any[]) {
         results.updated++;
       } else {
         // Create product with default values
+        logImportAPI(`Creando nuevo producto de catálogo: ${item.code}`);
         await prisma.product.create({
           data: {
             code: item.code,
@@ -187,24 +229,32 @@ async function handleCatalogImport(items: any[]) {
       }
     } catch (error) {
       console.error(`Error processing catalog item ${item.code}:`, error);
+      const errorMessage = `Error en producto de catálogo ${item.code}: ${(error as Error).message}`;
+      logImportAPI(errorMessage);
       results.failed++;
-      results.errors.push(`Error en producto ${item.code}: ${(error as Error).message}`);
+      results.errors.push(errorMessage);
     }
   }
 
+  logImportAPI(`Importación de catálogo completada: ${results.created} creados, ${results.updated} actualizados, ${results.failed} fallidos`);
   return NextResponse.json(results);
 }
 
 async function handleProjectImport(data: any) {
+  logImportAPI('Iniciando importación de proyecto');
+  
   const { projectName, clientName, items, totalCost, totalSellingPrice, totalProfit } = data;
   
   if (!projectName || !items || !Array.isArray(items) || items.length === 0) {
+    logImportAPI('Error: Datos de proyecto inválidos', data);
     return NextResponse.json(
       { error: 'Invalid project data' },
       { status: 400 }
     );
   }
 
+  logImportAPI(`Proyecto: ${projectName}, Cliente: ${clientName}, Items: ${items.length}`);
+  
   try {
     // Create or update project
     let project = await prisma.project.findFirst({
@@ -215,6 +265,7 @@ async function handleProjectImport(data: any) {
 
     if (project) {
       // Update project
+      logImportAPI(`Actualizando proyecto existente: ${projectName} (ID: ${project.id})`);
       project = await prisma.project.update({
         where: {
           id: project.id
@@ -228,6 +279,7 @@ async function handleProjectImport(data: any) {
       });
     } else {
       // Create project
+      logImportAPI(`Creando nuevo proyecto: ${projectName}`);
       project = await prisma.project.create({
         data: {
           name: projectName,
@@ -240,6 +292,7 @@ async function handleProjectImport(data: any) {
     }
 
     // Clear existing project products
+    logImportAPI(`Eliminando productos existentes del proyecto: ${project.id}`);
     await prisma.projectProduct.deleteMany({
       where: {
         projectId: project.id
@@ -247,6 +300,7 @@ async function handleProjectImport(data: any) {
     });
 
     // Add all project products
+    logImportAPI(`Agregando ${items.length} productos al proyecto`);
     const projectProducts = [];
     
     for (const item of items) {
@@ -311,9 +365,10 @@ async function handleProjectImport(data: any) {
       productsCount: projectProducts.length
     });
   } catch (error) {
-    console.error('Error importing project:', error);
+    console.error('Error processing project import:', error);
+    logImportAPI(`Error inesperado en importación de proyecto: ${(error as Error).message}`);
     return NextResponse.json(
-      { error: `Failed to import project: ${(error as Error).message}` },
+      { error: `Failed to process project import: ${(error as Error).message}` },
       { status: 500 }
     );
   }

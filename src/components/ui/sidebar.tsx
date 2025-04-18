@@ -7,62 +7,239 @@ import {
   ArrowUpTrayIcon,
   DocumentChartBarIcon,
   Cog6ToothIcon,
+  TagIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
+  ArrowRightEndOnRectangleIcon,
+  ChevronDoubleLeftIcon,
 } from '@heroicons/react/24/outline';
+import { useState } from 'react';
 import { twMerge } from 'tailwind-merge';
+import { Tooltip } from '@/components/ui/tooltip';
 
 interface SidebarProps {
   collapsed?: boolean;
+  onToggle?: () => void;
 }
 
 interface NavigationItem {
   name: string;
   href: string;
   icon: React.ElementType;
+  group?: string;
 }
 
-export default function Sidebar({ collapsed = false }: SidebarProps) {
+export default function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
   const pathname = usePathname();
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
+    'Inventario': true,
+    'Proyectos': true
+  });
+  
+  const toggleGroup = (group: string) => {
+    if (collapsed) return;
+    setOpenGroups(prev => ({
+      ...prev,
+      [group]: !prev[group]
+    }));
+  };
 
   const navigation: NavigationItem[] = [
     { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
-    { name: 'Inventario', href: '/inventory', icon: CubeIcon },
-    { name: 'Proyectos', href: '/projects', icon: ClipboardDocumentListIcon },
+    { name: 'Inventario', href: '/inventory', icon: CubeIcon, group: 'Inventario' },
+    { name: 'Categorías', href: '/categories', icon: TagIcon, group: 'Inventario' },
+    { name: 'Proyectos', href: '/projects', icon: ClipboardDocumentListIcon, group: 'Proyectos' },
     { name: 'Importar', href: '/import', icon: ArrowUpTrayIcon },
     { name: 'Reportes', href: '/reports', icon: DocumentChartBarIcon },
     { name: 'Configuración', href: '/settings', icon: Cog6ToothIcon },
   ];
 
+  // Agrupar los elementos de navegación por grupo
+  const navGroups: Record<string, NavigationItem[]> = {};
+  const ungroupedItems: NavigationItem[] = [];
+  
+  navigation.forEach(item => {
+    if (item.group) {
+      if (!navGroups[item.group]) navGroups[item.group] = [];
+      navGroups[item.group].push(item);
+    } else {
+      ungroupedItems.push(item);
+    }
+  });
+
   return (
     <div className={twMerge(
-      'h-screen bg-gray-800 text-white transition-all duration-300',
-      collapsed ? 'w-16' : 'w-64'
+      'h-screen bg-gradient-to-b from-slate-100 to-slate-50 text-slate-800 transition-all duration-300 shadow-xl overflow-hidden fixed dark:from-slate-900 dark:to-slate-800 dark:text-white z-30',
+      collapsed ? 'w-24' : 'w-72'
     )}>
-      <div className="flex h-16 items-center justify-center border-b border-gray-700">
+      <div className="flex h-16 items-center justify-between px-4 border-b border-slate-200 bg-slate-50 dark:bg-slate-800 dark:border-slate-700">
         {collapsed ? (
-          <span className="text-xl font-bold">LI</span>
+          <Tooltip content="Lumo Inventory" position="right">
+            <div className="flex items-center justify-center h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600">
+              <span className="text-xl font-bold text-white">LI</span>
+            </div>
+          </Tooltip>
         ) : (
-          <span className="text-xl font-bold">Lumo Inventory</span>
+          <div className="flex items-center">
+            <div className="flex items-center justify-center h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 mr-3">
+              <span className="text-xl font-bold text-white">LI</span>
+            </div>
+            <span className="text-xl font-semibold text-slate-800 dark:text-white">
+              Lumo Inventory
+            </span>
+          </div>
+        )}
+        
+        {onToggle && (
+          <button 
+            onClick={onToggle} 
+            className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+            aria-label={collapsed ? "Expandir barra lateral" : "Colapsar barra lateral"}
+          >
+            <ChevronDoubleLeftIcon 
+              className={`h-5 w-5 text-slate-500 dark:text-slate-400 transition-transform duration-300 ${collapsed ? 'rotate-180' : ''}`} 
+            />
+          </button>
         )}
       </div>
-      <nav className="mt-5 px-2">
-        <ul className="space-y-2">
-          {navigation.map((item) => (
-            <li key={item.name}>
+      
+      <nav className="h-[calc(100vh-4rem)] flex flex-col overflow-y-auto bg-slate-50 dark:bg-slate-800">
+        <div className="flex-grow py-5 px-4 space-y-2">
+          <div className="mb-6">
+            {/* Elementos sin grupo */}
+            {ungroupedItems.slice(0, 1).map((item) => (
               <Link
+                key={item.name}
                 href={item.href}
                 className={twMerge(
-                  'flex items-center rounded-md px-2 py-2 text-sm font-medium transition-colors',
+                  'flex items-center rounded-xl px-4 py-3.5 text-sm font-medium transition-all duration-150 mb-2',
                   pathname === item.href
-                    ? 'bg-gray-900 text-white'
-                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                    ? 'bg-blue-50 text-blue-600 shadow-sm dark:bg-slate-700 dark:text-blue-400'
+                    : 'text-slate-600 hover:bg-slate-200 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white'
                 )}
               >
-                <item.icon className="mr-3 h-6 w-6 flex-shrink-0" aria-hidden="true" />
-                {!collapsed && <span>{item.name}</span>}
+                {collapsed ? (
+                  <Tooltip content={item.name} position="right">
+                    <item.icon className="h-6 w-6 mx-auto flex-shrink-0" aria-hidden="true" />
+                  </Tooltip>
+                ) : (
+                  <>
+                    <item.icon className="h-5 w-5 mr-3 flex-shrink-0" aria-hidden="true" />
+                    <span>{item.name}</span>
+                  </>
+                )}
               </Link>
-            </li>
+            ))}
+          </div>
+          
+          {/* Elementos agrupados */}
+          {Object.keys(navGroups).map((groupName) => (
+            <div key={groupName} className="mb-4">
+              <button
+                type="button"
+                onClick={() => toggleGroup(groupName)}
+                className={twMerge(
+                  'flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold transition-colors mb-1',
+                  collapsed ? 'justify-center' : '',
+                  'text-slate-500 hover:bg-slate-200 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-white'
+                )}
+              >
+                {!collapsed && (
+                  <>
+                    <span>{groupName}</span>
+                    {openGroups[groupName] ? (
+                      <ChevronDownIcon className="h-4 w-4" />
+                    ) : (
+                      <ChevronRightIcon className="h-4 w-4" />
+                    )}
+                  </>
+                )}
+                {collapsed && (
+                  <Tooltip content={groupName} position="right">
+                    <span className="text-xs uppercase bg-slate-200 dark:bg-slate-700 rounded-md px-2 py-1">{groupName.charAt(0)}</span>
+                  </Tooltip>
+                )}
+              </button>
+              
+              <div className={twMerge(
+                'space-y-1 pl-3 transition-all duration-200 overflow-hidden',
+                openGroups[groupName] || collapsed ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+              )}>
+                {navGroups[groupName].map((item) => (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={twMerge(
+                      'flex items-center rounded-xl px-4 py-3 text-sm font-medium transition-colors',
+                      pathname === item.href
+                        ? 'bg-blue-50 text-blue-600 shadow-sm dark:bg-slate-700 dark:text-blue-400'
+                        : 'text-slate-600 hover:bg-slate-200 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white'
+                    )}
+                  >
+                    {collapsed ? (
+                      <Tooltip content={item.name} position="right">
+                        <item.icon className="h-5 w-5 mx-auto flex-shrink-0" aria-hidden="true" />
+                      </Tooltip>
+                    ) : (
+                      <>
+                        <item.icon className="h-5 w-5 mr-3 flex-shrink-0" aria-hidden="true" />
+                        <span>{item.name}</span>
+                      </>
+                    )}
+                  </Link>
+                ))}
+              </div>
+            </div>
           ))}
-        </ul>
+          
+          {/* Elementos sin grupo restantes */}
+          <div className="pt-2">
+            {ungroupedItems.slice(1).map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={twMerge(
+                  'flex items-center rounded-xl px-4 py-3 text-sm font-medium transition-all duration-150 mb-1',
+                  pathname === item.href
+                    ? 'bg-blue-50 text-blue-600 shadow-sm dark:bg-slate-700 dark:text-blue-400'
+                    : 'text-slate-600 hover:bg-slate-200 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white'
+                )}
+              >
+                {collapsed ? (
+                  <Tooltip content={item.name} position="right">
+                    <item.icon className="h-6 w-6 mx-auto flex-shrink-0" aria-hidden="true" />
+                  </Tooltip>
+                ) : (
+                  <>
+                    <item.icon className="h-5 w-5 mr-3 flex-shrink-0" aria-hidden="true" />
+                    <span>{item.name}</span>
+                  </>
+                )}
+              </Link>
+            ))}
+          </div>
+        </div>
+        
+        <div className="mt-auto py-4 px-4 border-t border-slate-200 bg-slate-50 dark:bg-slate-800 dark:border-slate-700">
+          <Link
+            href="/logout"
+            className={twMerge(
+              'flex items-center rounded-xl px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-200 hover:text-slate-900 transition-colors dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white',
+              collapsed ? 'justify-center' : ''
+            )}
+          >
+            {collapsed ? (
+              <Tooltip content="Cerrar Sesión" position="right">
+                <ArrowRightEndOnRectangleIcon className="h-6 w-6 mx-auto flex-shrink-0" aria-hidden="true" />
+              </Tooltip>
+            ) : (
+              <>
+                <ArrowRightEndOnRectangleIcon className="h-5 w-5 mr-3 flex-shrink-0" aria-hidden="true" />
+                <span>Cerrar Sesión</span>
+              </>
+            )}
+          </Link>
+        </div>
       </nav>
     </div>
   );

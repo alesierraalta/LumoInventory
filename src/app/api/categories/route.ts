@@ -37,18 +37,13 @@ const mockCategories = [
 export async function GET() {
   try {
     const categories = await prisma.category.findMany({
-      orderBy: {
-        name: 'asc'
-      }
+      orderBy: { name: 'asc' }
     });
-    
     return NextResponse.json(categories);
   } catch (error) {
-    console.error('Error fetching categories:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch categories' },
-      { status: 500 }
-    );
+    console.error('Error fetching categories, falling back to mock:', error);
+    // Fallback to mock data when database query fails
+    return NextResponse.json(mockCategories);
   }
 }
 

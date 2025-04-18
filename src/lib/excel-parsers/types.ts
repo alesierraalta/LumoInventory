@@ -1,13 +1,28 @@
 export interface InventoryItem {
   code: string;
   description: string;
+  category: string;
   unitCost: number;
-  margin: number;
+  fixedCostPct: number;
+  fixedCost: number;
+  totalUnitCost: number;
   sellingPrice: number;
+  distributorPrice: number;
+  distributorMargin: number;
+  intermediatePrice: number;
+  intermediateMargin: number;
+  margin: number;
   grossProfit: number;
   netCost?: number;
   availableQty: number;
-  category: string;
+  inTransitQty: number;
+  warehouseQty: number;
+  preSaleQty: number;
+  soldQty: number;
+  routeQty: number;
+  routePct: number;
+  isInvestmentRecovered: boolean;
+  image?: string | null;
 }
 
 export interface CatalogItem {
@@ -41,9 +56,9 @@ export interface HeaderMapping {
 }
 
 export enum ImportFileType {
-  INVENTORY = 'INVENTORY',
-  CATALOG = 'CATALOG',
-  PROJECT = 'PROJECT',
+  INVENTORY = 'inventory',
+  PROJECTS = 'projects',
+  CUSTOM = 'custom'
 }
 
 export interface ImportResult<T> {

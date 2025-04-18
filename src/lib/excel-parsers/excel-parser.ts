@@ -5,25 +5,24 @@ import { HeaderMapping, ImportFileType, ImportResult, SheetData } from './types'
  * Read an Excel file and convert it to JSON format
  */
 export async function readExcelFile(file: File): Promise<XLSX.WorkBook> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
+  try {
+    // En lugar de usar FileReader, usamos la API de File directamente
+    // que también funciona en el servidor Next.js
+    console.log("[EXCEL PARSER] Leyendo archivo con arrayBuffer API");
+    const arrayBuffer = await file.arrayBuffer();
+    console.log("[EXCEL PARSER] Archivo leído correctamente, tamaño:", arrayBuffer.byteLength);
     
-    reader.onload = (e) => {
-      try {
-        const data = new Uint8Array(e.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: 'array' });
-        resolve(workbook);
-      } catch (error) {
-        reject(new Error(`Failed to read Excel file: ${error}`));
-      }
-    };
+    const data = new Uint8Array(arrayBuffer);
+    console.log("[EXCEL PARSER] Convirtiendo a Uint8Array");
     
-    reader.onerror = () => {
-      reject(new Error('Failed to read file'));
-    };
+    const workbook = XLSX.read(data, { type: 'array' });
+    console.log("[EXCEL PARSER] Workbook creado correctamente, hojas:", workbook.SheetNames);
     
-    reader.readAsArrayBuffer(file);
-  });
+    return workbook;
+  } catch (error) {
+    console.error("[EXCEL PARSER] Error al leer el archivo Excel:", error);
+    throw new Error(`Failed to read Excel file: ${(error as Error).message}`);
+  }
 }
 
 /**
@@ -152,11 +151,19 @@ export async function processExcelFile<T>(
   customHeaderMapping?: HeaderMapping
 ): Promise<ImportResult<T>> {
   try {
+    console.log(`[EXCEL PARSER] Iniciando processExcelFile para archivo: ${file.name}, tamaño: ${file.size} bytes, tipo: ${fileType}`);
+    
     const workbook = await readExcelFile(file);
+    console.log(`[EXCEL PARSER] Workbook leído correctamente, hojas: ${workbook.SheetNames.join(', ')}`);
+    
     const sheetData = extractSheetData(workbook);
+    console.log(`[EXCEL PARSER] Datos extraídos de la hoja, filas: ${sheetData.length}`);
+    
     const headers = detectHeaders(sheetData);
+    console.log(`[EXCEL PARSER] Headers detectados: ${headers.join(', ')}`);
     
     if (headers.length === 0) {
+      console.log('[EXCEL PARSER] No se encontraron headers en el archivo');
       return { 
         success: false, 
         errors: ['No headers found in the Excel file'] 
@@ -164,13 +171,17 @@ export async function processExcelFile<T>(
     }
     
     const headerMapping = customHeaderMapping || autoMapHeaders(headers, fileType);
+    console.log('[EXCEL PARSER] Mapeo de headers:', headerMapping);
+    
     const mappedData = mapDataWithHeaders<T>(sheetData, headerMapping);
+    console.log(`[EXCEL PARSER] Datos mapeados: ${mappedData.length} filas`);
     
     return {
       success: true,
       data: mappedData
     };
   } catch (error) {
+    console.error('[EXCEL PARSER] Error en processExcelFile:', error);
     return {
       success: false,
       errors: [(error as Error).message]

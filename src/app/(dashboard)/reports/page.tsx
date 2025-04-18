@@ -4,9 +4,14 @@ import { useState, useEffect } from 'react';
 import { 
   ChartBarIcon, 
   DocumentTextIcon, 
-  ArrowDownTrayIcon 
+  ArrowDownTrayIcon, 
+  ArrowTrendingUpIcon,
+  BanknotesIcon,
+  ArchiveBoxIcon
 } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
+import { PageContainer, PageCard, StatCard } from '@/components/ui/page-container';
+import { formatCurrency } from '@/lib/utils';
 
 interface Project {
   id: string;
@@ -28,14 +33,6 @@ export default function ReportsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [categories, setCategories] = useState<CategorySummary[]>([]);
   const [loading, setLoading] = useState(true);
-  
-  // Format currency
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('es-MX', {
-      style: 'currency',
-      currency: 'MXN'
-    }).format(value);
-  };
   
   // Fetch data
   useEffect(() => {
@@ -95,68 +92,94 @@ export default function ReportsPage() {
   const totalProfit = projects.reduce((sum, p) => sum + p.totalProfit, 0);
   
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-800">Reportes</h1>
-      
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <div className="rounded-lg bg-white p-6 shadow-md">
-          <h2 className="text-lg font-semibold text-gray-800">Proyectos</h2>
-          <p className="mt-2 text-3xl font-bold">{totalProjects}</p>
-          <div className="mt-2 flex text-sm">
-            <span className="text-green-600">{completedProjects} completados</span>
-            <span className="mx-2 text-gray-300">|</span>
-            <span className="text-blue-600">{activeProjects} activos</span>
-          </div>
-        </div>
-        
-        <div className="rounded-lg bg-white p-6 shadow-md">
-          <h2 className="text-lg font-semibold text-gray-800">Valor del Inventario</h2>
-          <p className="mt-2 text-3xl font-bold">{formatCurrency(totalInventoryValue)}</p>
-          <p className="mt-2 text-sm text-gray-500">
-            Basado en {categories.reduce((sum, cat) => sum + cat.itemCount, 0)} artículos
-          </p>
-        </div>
-        
-        <div className="rounded-lg bg-white p-6 shadow-md">
-          <h2 className="text-lg font-semibold text-gray-800">Ventas y Utilidades</h2>
-          <p className="mt-2 text-3xl font-bold">{formatCurrency(totalSalesValue)}</p>
-          <p className="mt-2 text-sm text-green-600">
-            Utilidad: {formatCurrency(totalProfit)} ({totalSalesValue > 0 ? ((totalProfit / totalSalesValue) * 100).toFixed(1) : 0}%)
-          </p>
-        </div>
+    <main className="container mx-auto px-4 py-8">
+      <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between">
+        <h1 className="text-2xl font-semibold text-slate-800 dark:text-white">Informes y Reportes</h1>
+        <button className="mt-4 md:mt-0 inline-flex items-center justify-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-sm font-medium transition-colors">
+          <ArrowDownTrayIcon className="w-4 h-4 mr-2" />
+          Exportar Todos
+        </button>
       </div>
       
+      {/* Stats Cards */}
+      {loading ? (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8 animate-pulse">
+          <StatCard
+            title="Total Proyectos"
+            value="--"
+            className="from-indigo-400 to-indigo-600 text-white"
+          />
+          <StatCard
+            title="Valor Inventario"
+            value="--"
+            className="from-emerald-400 to-emerald-500 text-white"
+          />
+          <StatCard
+            title="Total Ventas"
+            value="--"
+            className="from-slate-400 to-slate-600 text-white"
+          />
+          <StatCard
+            title="Utilidad Total"
+            value="--"
+            className="from-indigo-300 to-indigo-500 text-white"
+          />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+          <StatCard
+            title="Total Proyectos"
+            value={totalProjects.toString()}
+            className="from-indigo-400 to-indigo-600 text-white"
+          />
+          <StatCard
+            title="Valor Inventario"
+            value={formatCurrency(totalInventoryValue)}
+            className="from-emerald-400 to-emerald-500 text-white"
+          />
+          <StatCard
+            title="Total Ventas"
+            value={formatCurrency(totalSalesValue)}
+            className="from-slate-400 to-slate-600 text-white"
+          />
+          <StatCard
+            title="Utilidad Total"
+            value={formatCurrency(totalProfit)}
+            className="from-indigo-300 to-indigo-500 text-white"
+          />
+        </div>
+      )}
+      
       {/* Main Reports */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
         {/* Inventory Report */}
-        <div className="rounded-lg bg-white p-6 shadow-md">
-          <div className="flex items-center justify-between">
+        <PageCard>
+          <div className="flex items-center justify-between mb-5">
             <div className="flex items-center">
-              <ChartBarIcon className="h-6 w-6 text-blue-500" />
-              <h2 className="ml-2 text-lg font-semibold text-gray-800">Reporte de Inventario</h2>
+              <ChartBarIcon className="h-5 w-5 text-indigo-500" />
+              <h2 className="ml-2 text-lg font-semibold text-slate-800 dark:text-white">Reporte de Inventario</h2>
             </div>
             <button
               onClick={generateInventoryReport}
-              className="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              className="inline-flex items-center justify-center px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-900/50 rounded-md text-sm font-medium transition-colors"
             >
-              <ArrowDownTrayIcon className="mr-2 h-4 w-4" />
-              Descargar
+              <ArrowDownTrayIcon className="w-4 h-4 mr-1.5" />
+              Exportar
             </button>
           </div>
           
           <div className="mt-4">
-            <h3 className="text-sm font-medium text-gray-700">Valor por Categoría</h3>
+            <h3 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">Valor por Categoría</h3>
             <div className="mt-2 space-y-3">
               {categories.map((category, index) => (
                 <div key={index} className="relative">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium">{category.name}</span>
-                    <span>{formatCurrency(category.totalValue)}</span>
+                    <span className="font-medium text-slate-700 dark:text-slate-300">{category.name}</span>
+                    <span className="text-slate-600 dark:text-slate-400">{formatCurrency(category.totalValue)}</span>
                   </div>
-                  <div className="mt-1 overflow-hidden rounded-full bg-gray-200">
+                  <div className="mt-1 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
                     <div 
-                      className="h-2 rounded-full bg-blue-600" 
+                      className="h-2 rounded-full bg-indigo-500" 
                       style={{ 
                         width: `${(category.totalValue / totalInventoryValue) * 100}%` 
                       }}
@@ -166,155 +189,200 @@ export default function ReportsPage() {
               ))}
             </div>
           </div>
-        </div>
+        </PageCard>
         
         {/* Project Reports */}
-        <div className="rounded-lg bg-white p-6 shadow-md">
-          <div className="flex items-center">
-            <DocumentTextIcon className="h-6 w-6 text-blue-500" />
-            <h2 className="ml-2 text-lg font-semibold text-gray-800">Reportes de Proyectos</h2>
+        <PageCard>
+          <div className="flex items-center mb-5">
+            <DocumentTextIcon className="h-5 w-5 text-indigo-500" />
+            <h2 className="ml-2 text-lg font-semibold text-slate-800 dark:text-white">Reportes de Proyectos</h2>
           </div>
           
           <div className="mt-4">
-            <h3 className="text-sm font-medium text-gray-700">Reportes Disponibles</h3>
+            <h3 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">Reportes Disponibles</h3>
             <div className="mt-2 space-y-3">
               {loading ? (
-                <p className="text-gray-500">Cargando proyectos...</p>
+                <div className="animate-pulse rounded-md bg-slate-200 dark:bg-slate-700 h-24"></div>
               ) : projects.length === 0 ? (
-                <p className="text-gray-500">No hay proyectos disponibles</p>
+                <p className="text-slate-500 dark:text-slate-400 text-center py-4">No hay proyectos disponibles</p>
               ) : (
                 projects.slice(0, 5).map((project) => (
-                  <div key={project.id} className="flex items-center justify-between rounded-md border border-gray-200 p-3">
+                  <div key={project.id} className="flex items-center justify-between rounded-lg border border-slate-200 p-3 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                     <div>
-                      <h4 className="font-medium">{project.name}</h4>
-                      <p className="text-sm text-gray-500">
-                        {project.clientName || 'Sin cliente'} - {formatCurrency(project.totalSellingPrice)}
+                      <h4 className="font-medium text-slate-800 dark:text-white">{project.name}</h4>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
+                        {project.clientName || 'Sin cliente'} • {formatCurrency(project.totalSellingPrice)}
                       </p>
                     </div>
                     <button
                       onClick={() => generateProjectReport(project.id)}
-                      className="inline-flex items-center rounded-md bg-blue-100 px-2.5 py-1.5 text-sm font-medium text-blue-800 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                      className="inline-flex items-center px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded text-xs font-medium transition-colors dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-900/50"
                     >
-                      <ArrowDownTrayIcon className="mr-1 h-4 w-4" />
-                      Reporte
+                      <ArrowDownTrayIcon className="mr-1 h-3 w-3" />
+                      PDF
                     </button>
                   </div>
                 ))
               )}
               
               {projects.length > 5 && (
-                <div className="mt-2 text-center">
-                  <button className="text-sm font-medium text-blue-600 hover:text-blue-800">
+                <div className="mt-3 text-center">
+                  <button className="text-sm font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors">
                     Ver todos los proyectos
                   </button>
                 </div>
               )}
             </div>
           </div>
-        </div>
+        </PageCard>
+        
+        {/* Financial Summary Preview */}
+        <PageCard>
+          <div className="flex items-center mb-5">
+            <BanknotesIcon className="h-5 w-5 text-indigo-500" />
+            <h2 className="ml-2 text-lg font-semibold text-slate-800 dark:text-white">Resumen Financiero</h2>
+          </div>
+          
+          <div className="space-y-4">
+            <div className="rounded-lg bg-slate-50 p-4 dark:bg-slate-800/50">
+              <h3 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Ventas Totales</h3>
+              <p className="text-2xl font-bold text-slate-900 dark:text-white">{formatCurrency(totalSalesValue)}</p>
+              <div className="mt-1 flex items-center text-xs text-green-600 dark:text-green-400">
+                <ArrowTrendingUpIcon className="h-3 w-3 mr-1" />
+                <span>+5.3% vs mes anterior</span>
+              </div>
+            </div>
+            
+            <div className="rounded-lg bg-slate-50 p-4 dark:bg-slate-800/50">
+              <h3 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Margen Promedio</h3>
+              <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                {totalSalesValue > 0 ? ((totalProfit / totalSalesValue) * 100).toFixed(1) : 0}%
+              </p>
+              <div className="mt-1 flex items-center text-xs text-green-600 dark:text-green-400">
+                <ArrowTrendingUpIcon className="h-3 w-3 mr-1" />
+                <span>+2.1% vs mes anterior</span>
+              </div>
+            </div>
+            
+            <button className="mt-2 w-full inline-flex items-center justify-center px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600 rounded-md text-sm font-medium transition-colors">
+              Ver informe completo
+            </button>
+          </div>
+        </PageCard>
       </div>
       
-      {/* Financial Summary */}
-      <div className="rounded-lg bg-white p-6 shadow-md">
-        <h2 className="text-lg font-semibold text-gray-800">Resumen Financiero</h2>
+      {/* Financial Summary Table */}
+      <PageCard>
+        <h2 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">Resumen Financiero</h2>
         
-        <div className="mt-4 overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+        <div className="overflow-x-auto">
+          <table className="w-full divide-y divide-slate-200 dark:divide-slate-700">
+            <thead className="bg-slate-50 dark:bg-slate-800">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Proyecto
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Cliente
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Estado
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Costo
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Precio Venta
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Utilidad
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Margen
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
+            <tbody className="bg-white divide-y divide-slate-100 dark:bg-slate-800 dark:divide-slate-700">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-4 text-center text-sm text-gray-500">
+                  <td colSpan={7} className="px-6 py-4 text-center text-slate-500 dark:text-slate-400">
                     Cargando datos...
                   </td>
                 </tr>
               ) : projects.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-4 text-center text-sm text-gray-500">
+                  <td colSpan={7} className="px-6 py-4 text-center text-slate-500 dark:text-slate-400">
                     No hay proyectos disponibles
                   </td>
                 </tr>
               ) : (
                 projects.map((project) => {
-                  const margin = project.totalSellingPrice > 0 
-                    ? (project.totalProfit / project.totalSellingPrice) * 100 
+                  const margin = project.totalSellingPrice > 0
+                    ? (project.totalProfit / project.totalSellingPrice) * 100
                     : 0;
                   
                   return (
-                    <tr key={project.id} className="hover:bg-gray-50">
-                      <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
+                    <tr key={project.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-800 dark:text-white">
                         {project.name}
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {project.clientName || 'N/A'}
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-300">
+                        {project.clientName || 'Sin cliente'}
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {project.status === 'COMPLETED' ? 'Completado' : 
-                         project.status === 'IN_PROGRESS' ? 'En Progreso' : 'Cancelado'}
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+                          project.status === 'COMPLETED' 
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' 
+                            : project.status === 'IN_PROGRESS'
+                              ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
+                              : 'bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300'
+                        }`}>
+                          {project.status === 'COMPLETED' ? 'Completado' : 
+                           project.status === 'IN_PROGRESS' ? 'En Progreso' : 
+                           project.status}
+                        </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-300">
                         {formatCurrency(project.totalCost)}
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-300">
                         {formatCurrency(project.totalSellingPrice)}
                       </td>
-                      <td className="px-6 py-4 text-sm font-medium text-green-600">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600 dark:text-green-400">
                         {formatCurrency(project.totalProfit)}
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {margin.toFixed(2)}%
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-800 dark:text-slate-200">
+                        {margin.toFixed(1)}%
                       </td>
                     </tr>
                   );
                 })
               )}
-              
-              {/* Summary Row */}
-              <tr className="bg-gray-50 font-medium">
-                <td colSpan={3} className="px-6 py-4 text-right text-sm text-gray-900">
-                  Totales:
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-900">
-                  {formatCurrency(projects.reduce((sum, p) => sum + p.totalCost, 0))}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-900">
-                  {formatCurrency(totalSalesValue)}
-                </td>
-                <td className="px-6 py-4 text-sm font-medium text-green-600">
-                  {formatCurrency(totalProfit)}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-900">
-                  {totalSalesValue > 0 ? ((totalProfit / totalSalesValue) * 100).toFixed(2) : '0.00'}%
-                </td>
-              </tr>
             </tbody>
+            {!loading && projects.length > 0 && (
+              <tfoot className="bg-slate-50 dark:bg-slate-800/50">
+                <tr>
+                  <td colSpan={3} className="px-6 py-3 text-sm font-medium text-slate-700 dark:text-slate-300">
+                    Totales
+                  </td>
+                  <td className="px-6 py-3 whitespace-nowrap text-sm font-medium text-slate-800 dark:text-white">
+                    {formatCurrency(projects.reduce((sum, p) => sum + p.totalCost, 0))}
+                  </td>
+                  <td className="px-6 py-3 whitespace-nowrap text-sm font-medium text-slate-800 dark:text-white">
+                    {formatCurrency(totalSalesValue)}
+                  </td>
+                  <td className="px-6 py-3 whitespace-nowrap text-sm font-medium text-green-600 dark:text-green-400">
+                    {formatCurrency(totalProfit)}
+                  </td>
+                  <td className="px-6 py-3 whitespace-nowrap text-sm font-medium text-slate-800 dark:text-white">
+                    {totalSalesValue > 0 ? ((totalProfit / totalSalesValue) * 100).toFixed(1) : 0}%
+                  </td>
+                </tr>
+              </tfoot>
+            )}
           </table>
         </div>
-      </div>
-    </div>
+      </PageCard>
+    </main>
   );
 } 

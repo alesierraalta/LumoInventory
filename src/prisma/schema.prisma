@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -20,61 +17,76 @@ model Category {
 }
 
 model Product {
-  id               String            @id @default(cuid())
-  code             String            @unique
-  description      String
-  unitCost         Float
-  margin           Float             @default(0)
-  sellingPrice     Float
-  grossProfit      Float             @default(0)
-  netCost          Float?
-  availableQty     Int               @default(0)
-  categoryId       String
-  category         Category          @relation(fields: [categoryId], references: [id])
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  projectProducts  ProjectProduct[]
+  id              String           @id @default(cuid())
+  code            String           @unique
+  description     String
+  unitCost        Float            // Costo EXW
+  fixedCostPct    Float            @default(2)    // % Costo Fijo (en porcentaje)
+  fixedCost       Float            @default(0)    // Costo Fijo calculado
+  totalUnitCost   Float            @default(0)    // Costo Unitario EXW+CF
+  margin          Float            @default(0)    // Margen Cliente Final
+  sellingPrice    Float            // PVP Cliente Final
+  distributorPrice Float           @default(0)    // PVP Distribuidor
+  distributorMargin Float          @default(0)    // Margen Distribuidor (en porcentaje)
+  intermediatePrice Float          @default(0)    // PVP Intermediario
+  intermediateMargin Float         @default(0)    // Margen Intermediario (en porcentaje)
+  grossProfit     Float            @default(0)    // Ganancia bruta por unidad
+  netCost         Float?           // Costo final considerando todos los factores
+  availableQty    Int              @default(0)    // DISPONIBLE ALMACÉN
+  inTransitQty    Int              @default(0)    // EN TRÁNSITO
+  warehouseQty    Int              @default(0)    // EN ALMACÉN
+  preSaleQty      Int              @default(0)    // PRE VENTA
+  soldQty         Int              @default(0)    // VENTA
+  routeQty        Int              @default(0)    // DISPONIBLE EN RUTA
+  routePct        Float            @default(0)    // % DISPONIBLE RUTA
+  image           String?          // URL de la imagen
+  isInvestmentRecovered Boolean    @default(false) // INVERSION RECUPERADA
+  categoryId      String
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  category        Category         @relation(fields: [categoryId], references: [id])
+  projectProducts ProjectProduct[]
 }
 
 model Project {
-  id               String            @id @default(cuid())
-  name             String
-  description      String?
-  clientName       String?
-  status           ProjectStatus     @default(IN_PROGRESS)
-  totalCost        Float             @default(0)
+  id                String           @id @default(cuid())
+  name              String
+  description       String?
+  clientName        String?
+  status            ProjectStatus    @default(IN_PROGRESS)
+  totalCost         Float            @default(0)
   totalSellingPrice Float            @default(0)
-  totalProfit      Float             @default(0)
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  products         ProjectProduct[]
+  totalProfit       Float            @default(0)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  products          ProjectProduct[]
 }
 
 model ProjectProduct {
-  id          String   @id @default(cuid())
-  projectId   String
-  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  productId   String
-  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  quantity    Int
-  unitCost    Float
+  id           String   @id @default(cuid())
+  projectId    String
+  productId    String
+  quantity     Int
+  unitCost     Float
   sellingPrice Float
-  totalCost   Float
-  totalPrice  Float
-  profit      Float
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  totalCost    Float
+  totalPrice   Float
+  profit       Float
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@unique([projectId, productId])
 }
 
 model ImportConfig {
-  id               String            @id @default(cuid())
-  name             String
-  type             ImportType
-  headerMapping    Json              // Maps file headers to database fields
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
+  id            String     @id @default(cuid())
+  name          String
+  type          ImportType
+  headerMapping Json
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
 }
 
 enum ProjectStatus {
@@ -87,4 +99,5 @@ enum ImportType {
   INVENTORY
   CATALOG
   PROJECT
-} 
+}
+ 
