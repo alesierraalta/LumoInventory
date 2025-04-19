@@ -12,6 +12,8 @@ import {
   ChevronRightIcon,
   ArrowRightEndOnRectangleIcon,
   ChevronDoubleLeftIcon,
+  MapPinIcon,
+  BuildingOfficeIcon,
 } from '@heroicons/react/24/outline';
 import { useState } from 'react';
 import { twMerge } from 'tailwind-merge';
@@ -33,7 +35,8 @@ export default function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
   const pathname = usePathname();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
     'Inventario': true,
-    'Proyectos': true
+    'Proyectos': true,
+    'Locaciones': true
   });
   
   const toggleGroup = (group: string) => {
@@ -46,7 +49,9 @@ export default function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
 
   const navigation: NavigationItem[] = [
     { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
-    { name: 'Inventario', href: '/inventory', icon: CubeIcon, group: 'Inventario' },
+    { name: 'Caracas', href: '/inventory', icon: BuildingOfficeIcon, group: 'Locaciones' },
+    { name: 'Valencia', href: '/inventory/valencia', icon: MapPinIcon, group: 'Locaciones' },
+    { name: 'Maracaibo', href: '/inventory/maracaibo', icon: MapPinIcon, group: 'Locaciones' },
     { name: 'Categorías', href: '/categories', icon: TagIcon, group: 'Inventario' },
     { name: 'Proyectos', href: '/projects', icon: ClipboardDocumentListIcon, group: 'Proyectos' },
     { name: 'Importar', href: '/import', icon: ArrowUpTrayIcon },
@@ -132,64 +137,131 @@ export default function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
             ))}
           </div>
           
-          {/* Elementos agrupados */}
-          {Object.keys(navGroups).map((groupName) => (
-            <div key={groupName} className="mb-4">
-              <button
-                type="button"
-                onClick={() => toggleGroup(groupName)}
-                className={twMerge(
-                  'flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold transition-colors mb-1',
-                  collapsed ? 'justify-center' : '',
-                  'text-slate-500 hover:bg-slate-200 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-white'
-                )}
-              >
-                {!collapsed && (
-                  <>
-                    <span>{groupName}</span>
-                    {openGroups[groupName] ? (
-                      <ChevronDownIcon className="h-4 w-4" />
-                    ) : (
-                      <ChevronRightIcon className="h-4 w-4" />
-                    )}
-                  </>
-                )}
-                {collapsed && (
-                  <Tooltip content={groupName} position="right">
-                    <span className="text-xs uppercase bg-slate-200 dark:bg-slate-700 rounded-md px-2 py-1">{groupName.charAt(0)}</span>
-                  </Tooltip>
-                )}
-              </button>
-              
-              <div className={twMerge(
-                'space-y-1 pl-3 transition-all duration-200 overflow-hidden',
-                openGroups[groupName] || collapsed ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
-              )}>
-                {navGroups[groupName].map((item) => (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className={twMerge(
-                      'flex items-center rounded-xl px-4 py-3 text-sm font-medium transition-colors',
-                      pathname === item.href
-                        ? 'bg-blue-50 text-blue-600 shadow-sm dark:bg-slate-700 dark:text-blue-400'
-                        : 'text-slate-600 hover:bg-slate-200 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white'
-                    )}
-                  >
-                    {collapsed ? (
-                      <Tooltip content={item.name} position="right">
-                        <item.icon className="h-5 w-5 mx-auto flex-shrink-0" aria-hidden="true" />
-                      </Tooltip>
-                    ) : (
-                      <>
-                        <item.icon className="h-5 w-5 mr-3 flex-shrink-0" aria-hidden="true" />
-                        <span>{item.name}</span>
-                      </>
-                    )}
-                  </Link>
-                ))}
+          {/* Locations Group First */}
+          {Object.keys(navGroups)
+            .filter(groupName => groupName === 'Locaciones')
+            .map((groupName) => (
+              <div key={groupName} className="mb-4">
+                <button
+                  type="button"
+                  onClick={() => toggleGroup(groupName)}
+                  className={twMerge(
+                    'flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold transition-colors mb-1',
+                    collapsed ? 'justify-center' : '',
+                    'text-slate-500 hover:bg-slate-200 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-white'
+                  )}
+                >
+                  {!collapsed && (
+                    <>
+                      <span>{groupName}</span>
+                      {openGroups[groupName] ? (
+                        <ChevronDownIcon className="h-4 w-4" />
+                      ) : (
+                        <ChevronRightIcon className="h-4 w-4" />
+                      )}
+                    </>
+                  )}
+                  {collapsed && (
+                    <Tooltip content={groupName} position="right">
+                      <span className="text-xs uppercase bg-slate-200 dark:bg-slate-700 rounded-md px-2 py-1">{groupName.charAt(0)}</span>
+                    </Tooltip>
+                  )}
+                </button>
+                
+                <div className={twMerge(
+                  'space-y-1 pl-3 transition-all duration-200 overflow-hidden',
+                  openGroups[groupName] || collapsed ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                )}>
+                  {navGroups[groupName].map((item) => (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      className={twMerge(
+                        'flex items-center rounded-xl px-4 py-3 text-sm font-medium transition-colors',
+                        pathname === item.href || 
+                        (item.name === 'Caracas' && pathname === '/inventory') ||
+                        (item.name === 'Valencia' && pathname === '/inventory/valencia') ||
+                        (item.name === 'Maracaibo' && pathname === '/inventory/maracaibo')
+                          ? 'bg-blue-50 text-blue-600 shadow-sm dark:bg-slate-700 dark:text-blue-400'
+                          : 'text-slate-600 hover:bg-slate-200 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white'
+                      )}
+                    >
+                      {collapsed ? (
+                        <Tooltip content={item.name} position="right">
+                          <item.icon className="h-5 w-5 mx-auto flex-shrink-0" aria-hidden="true" />
+                        </Tooltip>
+                      ) : (
+                        <>
+                          <item.icon className="h-5 w-5 mr-3 flex-shrink-0" aria-hidden="true" />
+                          <span>{item.name}</span>
+                        </>
+                      )}
+                    </Link>
+                  ))}
+                </div>
               </div>
-            </div>
+          ))}
+          
+          {/* Other Groups */}
+          {Object.keys(navGroups)
+            .filter(groupName => groupName !== 'Locaciones')
+            .map((groupName) => (
+              <div key={groupName} className="mb-4">
+                <button
+                  type="button"
+                  onClick={() => toggleGroup(groupName)}
+                  className={twMerge(
+                    'flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold transition-colors mb-1',
+                    collapsed ? 'justify-center' : '',
+                    'text-slate-500 hover:bg-slate-200 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-white'
+                  )}
+                >
+                  {!collapsed && (
+                    <>
+                      <span>{groupName}</span>
+                      {openGroups[groupName] ? (
+                        <ChevronDownIcon className="h-4 w-4" />
+                      ) : (
+                        <ChevronRightIcon className="h-4 w-4" />
+                      )}
+                    </>
+                  )}
+                  {collapsed && (
+                    <Tooltip content={groupName} position="right">
+                      <span className="text-xs uppercase bg-slate-200 dark:bg-slate-700 rounded-md px-2 py-1">{groupName.charAt(0)}</span>
+                    </Tooltip>
+                  )}
+                </button>
+                
+                <div className={twMerge(
+                  'space-y-1 pl-3 transition-all duration-200 overflow-hidden',
+                  openGroups[groupName] || collapsed ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                )}>
+                  {navGroups[groupName].map((item) => (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      className={twMerge(
+                        'flex items-center rounded-xl px-4 py-3 text-sm font-medium transition-colors',
+                        pathname === item.href
+                          ? 'bg-blue-50 text-blue-600 shadow-sm dark:bg-slate-700 dark:text-blue-400'
+                          : 'text-slate-600 hover:bg-slate-200 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white'
+                      )}
+                    >
+                      {collapsed ? (
+                        <Tooltip content={item.name} position="right">
+                          <item.icon className="h-5 w-5 mx-auto flex-shrink-0" aria-hidden="true" />
+                        </Tooltip>
+                      ) : (
+                        <>
+                          <item.icon className="h-5 w-5 mr-3 flex-shrink-0" aria-hidden="true" />
+                          <span>{item.name}</span>
+                        </>
+                      )}
+                    </Link>
+                  ))}
+                </div>
+              </div>
           ))}
           
           {/* Elementos sin grupo restantes */}
