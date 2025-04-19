@@ -49,10 +49,15 @@ export default function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
 
   const navigation: NavigationItem[] = [
     { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
-    { name: 'Caracas', href: '/inventory', icon: BuildingOfficeIcon, group: 'Locaciones' },
-    { name: 'Valencia', href: '/inventory/valencia', icon: MapPinIcon, group: 'Locaciones' },
-    { name: 'Maracaibo', href: '/inventory/maracaibo', icon: MapPinIcon, group: 'Locaciones' },
-    { name: 'Categorías', href: '/categories', icon: TagIcon, group: 'Inventario' },
+    
+    // Caracas group - includes categories for Caracas
+    { name: 'Inventario', href: '/inventory', icon: BuildingOfficeIcon, group: 'Caracas' },
+    { name: 'Categorías', href: '/categories?location=caracas', icon: TagIcon, group: 'Caracas' },
+    
+    // Valencia group - includes categories for Valencia
+    { name: 'Inventario', href: '/inventory/valencia', icon: MapPinIcon, group: 'Valencia' },
+    { name: 'Categorías', href: '/categories?location=valencia', icon: TagIcon, group: 'Valencia' },
+    
     { name: 'Proyectos', href: '/projects', icon: ClipboardDocumentListIcon, group: 'Proyectos' },
     { name: 'Importar', href: '/import', icon: ArrowUpTrayIcon },
     { name: 'Reportes', href: '/reports', icon: DocumentChartBarIcon },
@@ -94,18 +99,6 @@ export default function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
             </span>
           </div>
         )}
-        
-        {onToggle && (
-          <button 
-            onClick={onToggle} 
-            className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-            aria-label={collapsed ? "Expandir barra lateral" : "Colapsar barra lateral"}
-          >
-            <ChevronDoubleLeftIcon 
-              className={`h-5 w-5 text-slate-500 dark:text-slate-400 transition-transform duration-300 ${collapsed ? 'rotate-180' : ''}`} 
-            />
-          </button>
-        )}
       </div>
       
       <nav className="h-[calc(100vh-4rem)] flex flex-col overflow-y-auto bg-slate-50 dark:bg-slate-800">
@@ -137,9 +130,9 @@ export default function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
             ))}
           </div>
           
-          {/* Locations Group First */}
+          {/* Locations Groups First */}
           {Object.keys(navGroups)
-            .filter(groupName => groupName === 'Locaciones')
+            .filter(groupName => groupName === 'Caracas' || groupName === 'Valencia')
             .map((groupName) => (
               <div key={groupName} className="mb-4">
                 <button
@@ -153,7 +146,18 @@ export default function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
                 >
                   {!collapsed && (
                     <>
-                      <span>{groupName}</span>
+                      <span>
+                        {groupName === 'Caracas' && (
+                          <span className="flex items-center">
+                            <BuildingOfficeIcon className="h-4 w-4 mr-2" /> {groupName}
+                          </span>
+                        )}
+                        {groupName === 'Valencia' && (
+                          <span className="flex items-center">
+                            <MapPinIcon className="h-4 w-4 mr-2" /> {groupName}
+                          </span>
+                        )}
+                      </span>
                       {openGroups[groupName] ? (
                         <ChevronDownIcon className="h-4 w-4" />
                       ) : (
@@ -163,7 +167,9 @@ export default function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
                   )}
                   {collapsed && (
                     <Tooltip content={groupName} position="right">
-                      <span className="text-xs uppercase bg-slate-200 dark:bg-slate-700 rounded-md px-2 py-1">{groupName.charAt(0)}</span>
+                      <span className="text-xs uppercase bg-slate-200 dark:bg-slate-700 rounded-md px-2 py-1">
+                        {groupName.charAt(0)}
+                      </span>
                     </Tooltip>
                   )}
                 </button>
@@ -174,20 +180,21 @@ export default function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
                 )}>
                   {navGroups[groupName].map((item) => (
                     <Link
-                      key={item.name}
+                      key={item.name + item.href}
                       href={item.href}
                       className={twMerge(
                         'flex items-center rounded-xl px-4 py-3 text-sm font-medium transition-colors',
                         pathname === item.href || 
-                        (item.name === 'Caracas' && pathname === '/inventory') ||
-                        (item.name === 'Valencia' && pathname === '/inventory/valencia') ||
-                        (item.name === 'Maracaibo' && pathname === '/inventory/maracaibo')
+                        (item.href === '/inventory' && pathname === '/inventory') ||
+                        (item.href === '/inventory/valencia' && pathname === '/inventory/valencia') ||
+                        (item.href === '/categories?location=caracas' && pathname.includes('/categories') && pathname.includes('caracas')) ||
+                        (item.href === '/categories?location=valencia' && pathname.includes('/categories') && pathname.includes('valencia'))
                           ? 'bg-blue-50 text-blue-600 shadow-sm dark:bg-slate-700 dark:text-blue-400'
                           : 'text-slate-600 hover:bg-slate-200 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white'
                       )}
                     >
                       {collapsed ? (
-                        <Tooltip content={item.name} position="right">
+                        <Tooltip content={item.name === 'Inventario' ? `${groupName} - ${item.name}` : item.name} position="right">
                           <item.icon className="h-5 w-5 mx-auto flex-shrink-0" aria-hidden="true" />
                         </Tooltip>
                       ) : (
@@ -204,7 +211,7 @@ export default function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
           
           {/* Other Groups */}
           {Object.keys(navGroups)
-            .filter(groupName => groupName !== 'Locaciones')
+            .filter(groupName => groupName !== 'Caracas' && groupName !== 'Valencia')
             .map((groupName) => (
               <div key={groupName} className="mb-4">
                 <button
@@ -265,31 +272,29 @@ export default function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
           ))}
           
           {/* Elementos sin grupo restantes */}
-          <div className="pt-2">
-            {ungroupedItems.slice(1).map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={twMerge(
-                  'flex items-center rounded-xl px-4 py-3 text-sm font-medium transition-all duration-150 mb-1',
-                  pathname === item.href
-                    ? 'bg-blue-50 text-blue-600 shadow-sm dark:bg-slate-700 dark:text-blue-400'
-                    : 'text-slate-600 hover:bg-slate-200 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white'
-                )}
-              >
-                {collapsed ? (
-                  <Tooltip content={item.name} position="right">
-                    <item.icon className="h-6 w-6 mx-auto flex-shrink-0" aria-hidden="true" />
-                  </Tooltip>
-                ) : (
-                  <>
-                    <item.icon className="h-5 w-5 mr-3 flex-shrink-0" aria-hidden="true" />
-                    <span>{item.name}</span>
-                  </>
-                )}
-              </Link>
-            ))}
-          </div>
+          {ungroupedItems.slice(1).map((item) => (
+            <Link
+              key={item.name}
+              href={item.href}
+              className={twMerge(
+                'flex items-center rounded-xl px-4 py-3.5 text-sm font-medium transition-colors mb-2',
+                pathname === item.href
+                  ? 'bg-blue-50 text-blue-600 shadow-sm dark:bg-slate-700 dark:text-blue-400'
+                  : 'text-slate-600 hover:bg-slate-200 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white'
+              )}
+            >
+              {collapsed ? (
+                <Tooltip content={item.name} position="right">
+                  <item.icon className="h-6 w-6 mx-auto flex-shrink-0" aria-hidden="true" />
+                </Tooltip>
+              ) : (
+                <>
+                  <item.icon className="h-5 w-5 mr-3 flex-shrink-0" aria-hidden="true" />
+                  <span>{item.name}</span>
+                </>
+              )}
+            </Link>
+          ))}
         </div>
         
         <div className="mt-auto py-4 px-4 border-t border-slate-200 bg-slate-50 dark:bg-slate-800 dark:border-slate-700">

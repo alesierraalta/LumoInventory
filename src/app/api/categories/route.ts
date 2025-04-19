@@ -7,6 +7,7 @@ const mockCategories = [
     id: "clqwertyuiop1",
     name: "Luminarias",
     description: "Dispositivos de iluminación para interiores y exteriores",
+    location: "caracas",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   },
@@ -14,6 +15,7 @@ const mockCategories = [
     id: "clqwertyuiop2",
     name: "Cables",
     description: "Cables eléctricos de diferentes calibres y tipos",
+    location: "caracas",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   },
@@ -21,6 +23,7 @@ const mockCategories = [
     id: "clqwertyuiop3",
     name: "Accesorios",
     description: "Accesorios para instalaciones eléctricas",
+    location: "caracas",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   },
@@ -28,22 +31,49 @@ const mockCategories = [
     id: "clqwertyuiop4",
     name: "Herramientas",
     description: "Herramientas para trabajo eléctrico",
+    location: "caracas",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: "clqwertyuiop5",
+    name: "Luminarias",
+    description: "Dispositivos de iluminación para interiores y exteriores",
+    location: "valencia",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: "clqwertyuiop6",
+    name: "Cables",
+    description: "Cables eléctricos de diferentes calibres y tipos",
+    location: "valencia",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   }
 ];
 
-// GET /api/categories - Get all categories
-export async function GET() {
+// GET /api/categories - Get all categories with location filter
+export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    const location = searchParams.get('location') || 'caracas'; // Default location is caracas
+    
     const categories = await prisma.category.findMany({
+      where: { location },
       orderBy: { name: 'asc' }
     });
+    
     return NextResponse.json(categories);
   } catch (error) {
     console.error('Error fetching categories, falling back to mock:', error);
-    // Fallback to mock data when database query fails
-    return NextResponse.json(mockCategories);
+    
+    // Fallback to mock data when database query fails, filtering by location
+    const { searchParams } = new URL(request.url);
+    const location = searchParams.get('location') || 'caracas';
+    const filteredMocks = mockCategories.filter(cat => cat.location === location);
+    
+    return NextResponse.json(filteredMocks);
   }
 }
 
@@ -60,11 +90,12 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Create category
+    // Create category (with location support)
     const category = await prisma.category.create({
       data: {
         name: data.name,
-        description: data.description || null
+        description: data.description || null,
+        location: data.location || 'caracas'
       }
     });
     
@@ -75,7 +106,7 @@ export async function POST(request: NextRequest) {
     // Handle unique constraint violations
     if (error.code === 'P2002') {
       return NextResponse.json(
-        { error: 'A category with this name already exists' },
+        { error: 'A category with this name already exists in this location' },
         { status: 409 }
       );
     }

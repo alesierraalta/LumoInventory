@@ -133,21 +133,57 @@ const mockValenciaProducts = [
     },
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
+  },
+  {
+    id: "valpr4",
+    code: "ACC-V001",
+    description: "Interruptor sencillo",
+    unitCost: 42.00,
+    sellingPrice: 78.00,
+    margin: 46.15,
+    grossProfit: 36.00,
+    netCost: 42.00,
+    availableQty: 95,
+    categoryId: "clqwertyuiop3",
+    category: {
+      id: "clqwertyuiop3",
+      name: "Accesorios"
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: "valpr5",
+    code: "PANEL-V001",
+    description: "Panel LED Cuadrado 24W",
+    unitCost: 180.00,
+    sellingPrice: 320.00,
+    margin: 43.75,
+    grossProfit: 140.00,
+    netCost: 180.00,
+    availableQty: 65,
+    categoryId: "clqwertyuiop1",
+    category: {
+      id: "clqwertyuiop1",
+      name: "Luminarias"
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   }
 ];
 
-// Datos simulados para Maracaibo
+// Mock data for Maracaibo
 const mockMaracaiboProducts = [
   {
     id: "marpr1",
-    code: "LUM-M001",
-    description: "Luminaria LED 20W",
-    unitCost: 255.00,
-    sellingPrice: 460.00,
-    margin: 44.57,
-    grossProfit: 205.00,
-    netCost: 255.00,
-    availableQty: 38,
+    code: "LED-M001",
+    description: "Bombillo LED 9W E27",
+    unitCost: 15.50,
+    sellingPrice: 25.20,
+    margin: 38.49,
+    grossProfit: 9.70,
+    netCost: 15.50,
+    availableQty: 120,
     categoryId: "clqwertyuiop1",
     category: {
       id: "clqwertyuiop1",
@@ -158,32 +194,14 @@ const mockMaracaiboProducts = [
   },
   {
     id: "marpr2",
-    code: "LUM-M002",
-    description: "Luminaria LED 30W",
-    unitCost: 325.00,
-    sellingPrice: 590.00,
-    margin: 44.92,
-    grossProfit: 265.00,
-    netCost: 325.00,
-    availableQty: 24,
-    categoryId: "clqwertyuiop1",
-    category: {
-      id: "clqwertyuiop1",
-      name: "Luminarias"
-    },
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  {
-    id: "marpr3",
-    code: "CAB-M001",
-    description: "Cable 12 AWG (m)",
-    unitCost: 19.20,
-    sellingPrice: 29.50,
-    margin: 34.92,
-    grossProfit: 10.30,
-    netCost: 19.20,
-    availableQty: 420,
+    code: "CABLE-M001",
+    description: "Cable THWN #12 AWG (m)",
+    unitCost: 1.20,
+    sellingPrice: 1.98,
+    margin: 39.39,
+    grossProfit: 0.78,
+    netCost: 1.20,
+    availableQty: 520,
     categoryId: "clqwertyuiop2",
     category: {
       id: "clqwertyuiop2",
@@ -193,37 +211,55 @@ const mockMaracaiboProducts = [
     updatedAt: new Date().toISOString()
   },
   {
+    id: "marpr3",
+    code: "TOMA-M001",
+    description: "Tomacorriente doble polarizado",
+    unitCost: 4.75,
+    sellingPrice: 8.25,
+    margin: 42.42,
+    grossProfit: 3.50,
+    netCost: 4.75,
+    availableQty: 85,
+    categoryId: "clqwertyuiop3",
+    category: {
+      id: "clqwertyuiop3",
+      name: "Tomacorrientes"
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
     id: "marpr4",
-    code: "PANEL-M001",
-    description: "Panel Solar 100W",
-    unitCost: 450.00,
-    sellingPrice: 780.00,
-    margin: 42.31,
-    grossProfit: 330.00,
-    netCost: 450.00,
-    availableQty: 15,
+    code: "INTER-M001",
+    description: "Interruptor sencillo",
+    unitCost: 3.80,
+    sellingPrice: 6.50,
+    margin: 41.54,
+    grossProfit: 2.70,
+    netCost: 3.80,
+    availableQty: 74,
     categoryId: "clqwertyuiop4",
     category: {
       id: "clqwertyuiop4",
-      name: "Paneles Solares"
+      name: "Interruptores"
     },
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   },
   {
     id: "marpr5",
-    code: "BAT-M001",
-    description: "Batería Solar 120Ah",
-    unitCost: 680.00,
-    sellingPrice: 1150.00,
-    margin: 40.87,
-    grossProfit: 470.00,
-    netCost: 680.00,
-    availableQty: 8,
-    categoryId: "clqwertyuiop4",
+    code: "PANEL-M001",
+    description: "Panel LED Redondo 18W",
+    unitCost: 160.00,
+    sellingPrice: 280.00,
+    margin: 42.86,
+    grossProfit: 120.00,
+    netCost: 160.00,
+    availableQty: 45,
+    categoryId: "clqwertyuiop1",
     category: {
-      id: "clqwertyuiop4",
-      name: "Paneles Solares"
+      id: "clqwertyuiop1",
+      name: "Luminarias"
     },
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
@@ -652,6 +688,88 @@ export async function PUT(request: NextRequest) {
     
     return NextResponse.json(
       { error: 'Failed to update inventory item' },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE /api/inventory/:id - Delete an inventory item
+export async function DELETE(request: NextRequest) {
+  try {
+    // Make sure we have a valid prisma client before calling methods on it
+    if (!prisma || !prisma.product) {
+      console.error('Prisma client or product model is undefined, using mock implementation');
+      const url = new URL(request.url);
+      const pathParts = url.pathname.split('/');
+      const id = pathParts[pathParts.length - 1];
+      
+      // Return mock response
+      return NextResponse.json({
+        success: true,
+        message: `Mock deletion of product ${id}`
+      });
+    }
+    
+    const url = new URL(request.url);
+    const pathParts = url.pathname.split('/');
+    const id = pathParts[pathParts.length - 1];
+    
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Product ID is required' },
+        { status: 400 }
+      );
+    }
+    
+    try {
+      // Check if product exists
+      const product = await prisma.product.findUnique({
+        where: { id }
+      });
+      
+      if (!product) {
+        return NextResponse.json(
+          { error: 'Product not found' },
+          { status: 404 }
+        );
+      }
+      
+      // Delete product
+      await prisma.product.delete({
+        where: { id }
+      });
+      
+      return NextResponse.json({
+        success: true,
+        message: 'Product deleted successfully'
+      });
+    } catch (dbError: any) {
+      if (dbError.code === 'P2025') {
+        return NextResponse.json(
+          { error: 'Product not found' },
+          { status: 404 }
+        );
+      }
+      
+      // Handle database connection issues
+      if (dbError instanceof PrismaClientInitializationError || 
+          (dbError instanceof Error && dbError.message.includes('connect'))) {
+        console.error('Database connection error, falling back to mock:', dbError);
+        
+        // Return mock response
+        return NextResponse.json({
+          success: true,
+          message: `Mock deletion of product ${id}`
+        });
+      }
+      
+      throw dbError;
+    }
+  } catch (error: any) {
+    console.error('Error deleting inventory item:', error);
+    
+    return NextResponse.json(
+      { error: 'Failed to delete inventory item' },
       { status: 500 }
     );
   }

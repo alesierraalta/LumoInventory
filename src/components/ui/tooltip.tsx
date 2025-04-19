@@ -1,50 +1,121 @@
-import React, { useState, ReactNode } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+type TooltipPosition = 'top' | 'right' | 'bottom' | 'left';
 
 interface TooltipProps {
-  children: ReactNode;
-  content: string;
-  position?: 'top' | 'right' | 'bottom' | 'left';
+  children: React.ReactNode;
+  content: React.ReactNode;
+  position?: TooltipPosition;
+  delay?: number;
+  className?: string;
+  contentClassName?: string;
+  showArrow?: boolean;
+  maxWidth?: string;
 }
 
-export const Tooltip = ({ 
-  children, 
-  content, 
-  position = 'top' 
-}: TooltipProps) => {
-  const [isVisible, setIsVisible] = useState(false);
+export const Tooltip: React.FC<TooltipProps> = ({
+  children,
+  content,
+  position = 'top',
+  delay = 300,
+  className = '',
+  contentClassName = '',
+  showArrow = true,
+  maxWidth = '250px',
+}) => {
+  const [visible, setVisible] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const childRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    setMounted(true);
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
 
+  const handleMouseEnter = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = setTimeout(() => {
+      setVisible(true);
+    }, delay);
+  };
+
+  const handleMouseLeave = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = setTimeout(() => {
+      setVisible(false);
+    }, 100);
+  };
+
+  // Position classes
   const positionClasses = {
-    top: 'bottom-full left-1/2 -translate-x-1/2 mb-2',
-    right: 'left-full top-1/2 -translate-y-1/2 ml-2',
-    bottom: 'top-full left-1/2 -translate-x-1/2 mt-2',
-    left: 'right-full top-1/2 -translate-y-1/2 mr-2'
+    top: '-translate-x-1/2 -translate-y-full left-1/2 bottom-[calc(100%+8px)]',
+    right: 'translate-y-[-50%] left-[calc(100%+8px)] top-1/2',
+    bottom: '-translate-x-1/2 translate-y-0 left-1/2 top-[calc(100%+8px)]',
+    left: 'translate-y-[-50%] right-[calc(100%+8px)] top-1/2',
+  };
+  
+  // Arrow position classes
+  const arrowClasses = {
+    top: 'bottom-[-5px] left-1/2 -translate-x-1/2 border-l-transparent border-r-transparent border-b-transparent',
+    right: 'left-[-5px] top-1/2 -translate-y-1/2 border-t-transparent border-b-transparent border-r-transparent',
+    bottom: 'top-[-5px] left-1/2 -translate-x-1/2 border-l-transparent border-r-transparent border-t-transparent',
+    left: 'right-[-5px] top-1/2 -translate-y-1/2 border-t-transparent border-b-transparent border-l-transparent',
   };
 
-  const arrowPositionClasses = {
-    top: 'top-full left-1/2 -translate-x-1/2 border-t-slate-700 dark:border-t-slate-600',
-    right: 'right-full top-1/2 -translate-y-1/2 border-r-slate-700 dark:border-r-slate-600',
-    bottom: 'bottom-full left-1/2 -translate-x-1/2 border-b-slate-700 dark:border-b-slate-600',
-    left: 'left-full top-1/2 -translate-y-1/2 border-l-slate-700 dark:border-l-slate-600'
-  };
+  if (!mounted) return <>{children}</>;
 
   return (
     <div 
-      className="relative inline-block"
-      onMouseEnter={() => setIsVisible(true)}
-      onMouseLeave={() => setIsVisible(false)}
+      className={`relative inline-flex ${className}`}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      onFocus={handleMouseEnter}
+      onBlur={handleMouseLeave}
+      ref={childRef}
     >
       {children}
       
-      {isVisible && (
-        <div 
-          className={`absolute ${positionClasses[position]} z-50 px-3 py-2 text-xs font-medium text-white bg-slate-700 rounded-xl shadow-lg backdrop-blur-sm bg-opacity-90 whitespace-nowrap dark:bg-slate-600 dark:bg-opacity-95 transition-opacity duration-150 ease-in-out`}
-        >
-          {content}
-          <div 
-            className={`absolute ${arrowPositionClasses[position]} border-4 border-transparent z-40`}
-          />
-        </div>
-      )}
+      <AnimatePresence>
+        {visible && content && (
+          <motion.div
+            className={`absolute z-50 ${positionClasses[position]}`}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+          >
+            <div 
+              className={`
+                px-3 py-2 rounded-md bg-gray-800 text-white text-sm shadow-lg
+                dark:bg-gray-700 backdrop-blur-sm bg-opacity-95 dark:bg-opacity-95
+                ${contentClassName}
+              `}
+              style={{ maxWidth }}
+            >
+              {content}
+              {showArrow && (
+                <div 
+                  className={`
+                    absolute w-0 h-0 border-solid border-[5px] 
+                    border-gray-800 dark:border-gray-700
+                    ${arrowClasses[position]}
+                  `}
+                />
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }; 

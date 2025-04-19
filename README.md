@@ -114,4 +114,98 @@ MIT
 
 ## Contacto
 
-Para más información, contactar a: tu-email@ejemplo.com 
+Para más información, contactar a: tu-email@ejemplo.com
+
+## Requisitos
+
+- Node.js 18.17.0 o superior
+- PostgreSQL 14 o superior
+
+## Instalación
+
+### En macOS
+
+1. Clona el repositorio:
+```bash
+git clone https://github.com/alesierraalta/LumoInventory.git
+cd LumoInventory
+```
+
+2. Ejecuta el script de configuración:
+```bash
+chmod +x setup_mac.sh
+./setup_mac.sh
+```
+
+3. Inicia la aplicación:
+```bash
+npm run dev
+```
+
+### Solución de problemas en macOS
+
+Si encuentras problemas con la configuración, ejecuta el script de diagnóstico y corrección de errores:
+
+```bash
+chmod +x troubleshoot_mac.sh
+./troubleshoot_mac.sh
+```
+
+Este script verificará automáticamente:
+- Instalación y versión de Node.js
+- Configuración de PostgreSQL
+- Conexión a la base de datos
+- Variables de entorno (.env)
+- Dependencias del proyecto
+- Configuración de Prisma
+- Disponibilidad del puerto 3000
+- Permisos de archivos
+- Configuración de Git
+
+Si encuentra problemas, intentará corregirlos automáticamente o te guiará para solucionarlos manualmente.
+
+### En Windows
+
+1. Clona el repositorio:
+```powershell
+git clone https://github.com/alesierraalta/LumoInventory.git
+cd LumoInventory
+```
+
+2. Instala las dependencias necesarias:
+   - [Node.js](https://nodejs.org/) (versión 18.17 o superior)
+   - [PostgreSQL](https://www.postgresql.org/download/windows/)
+
+3. Configura PostgreSQL según las instrucciones en CROSS_PLATFORM.md
+
+4. Instala las dependencias:
+```powershell
+npm install
+```
+
+5. Configura las variables de entorno:
+   - Crea un archivo .env en la raíz del proyecto 
+
+6. Genera el cliente Prisma y aplica las migraciones:
+```powershell
+npx prisma generate
+npx prisma migrate deploy
+```
+
+7. Inicia la aplicación:
+```powershell
+npm run dev
+```
+
+## Desarrollo
+
+Para más detalles sobre el desarrollo multiplataforma, consulta [CROSS_PLATFORM.md](CROSS_PLATFORM.md).
+
+## Tecnologías
+
+- Next.js con TypeScript
+- Tailwind CSS
+- Prisma ORM
+- PostgreSQL
+- Chart.js
+- React Hook Form 
