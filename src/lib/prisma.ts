@@ -37,6 +37,13 @@ const mockPrismaClient = {
     findUnique: async () => null,
     update: async (data: any) => data.data,
     delete: async () => ({})
+  },
+  item: {
+    findMany: async () => [],
+    create: async (data: any) => data.data,
+    findUnique: async () => null,
+    update: async (data: any) => data.data,
+    delete: async () => ({})
   }
 };
 
