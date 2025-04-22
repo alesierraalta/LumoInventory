@@ -31,4 +31,11 @@ export function calculateMargin(cost: number, price: number): string {
   
   const margin = ((price - cost) / price) * 100;
   return `${margin.toFixed(1)}%`;
+}
+
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
 } 

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { PrismaClient } from '@prisma/client';
 
 // Create mock implementations to prevent errors
@@ -37,13 +38,6 @@ const mockPrismaClient = {
     findUnique: async () => null,
     update: async (data: any) => data.data,
     delete: async () => ({})
-  },
-  item: {
-    findMany: async () => [],
-    create: async (data: any) => data.data,
-    findUnique: async () => null,
-    update: async (data: any) => data.data,
-    delete: async () => ({})
   }
 };
 
@@ -73,3 +67,24 @@ try {
 }
 
 export const prisma = prismaInstance; 
+=======
+import { PrismaClient } from '@prisma/client';
+
+const globalForPrisma = global as unknown as { prisma: PrismaClient };
+
+// Usamos la URL optimizada para Prisma si está disponible
+const databaseUrl = process.env.POSTGRES_PRISMA_URL || process.env.DATABASE_URL;
+
+export const prisma =
+  globalForPrisma.prisma ||
+  new PrismaClient({
+    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+    datasources: {
+      db: {
+        url: databaseUrl,
+      },
+    },
+  });
+
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma; 
+>>>>>>> 0bb9e641954d88ba482a5e77e51bc19078c005d1
